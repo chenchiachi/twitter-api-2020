@@ -1,23 +1,20 @@
-const jwt = require('jsonwebtoken');
+const sequelize = require('sequelize')
+const { User } = require('../models')
 const adminController = {
-  login: (req, res, next) => {
+  getUsers: async (req, res, next) => {
     try {
-      const userData = req.user.toJSON()
-      if (userData.role === 'admin') {
-        delete userData.password
-        const token = jwt.sign(userData, process.env.JWT_SECRET, {
-          expiresIn: '30d'
-        })
-        res.json({
-          status: 'success',
-          data: {
-            token,
-            user: userData
-          }
-        })
-      } else {
-        throw Error('Unauthorized.')
-      }
+      const userData = await User.findAll({
+        nest: true,
+        raw: true,
+        attributes: ['id', 'account', 'name', 'cover', 'avatar',
+          [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Tweets WHERE Tweets.UserId = User.id)'), 'tweetsCount'],
+          [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followingId = User.id)'), 'followersCount'],
+          [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followerId = User.id)'), 'followingsCount'],
+          [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Likes WHERE Likes.UserId = User.id)'), 'likesCount'],
+        ],
+        order: [[sequelize.col('tweetsCount'), 'DESC'], ['createdAt']]
+      })
+      res.json(userData)
     } catch (err) {
       next(err)
     }

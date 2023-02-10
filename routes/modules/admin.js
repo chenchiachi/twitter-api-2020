@@ -3,6 +3,6 @@ const router = express.Router()
 const passport = require('../../config/passport')
 const adminController = require('../../controllers/admin-controller')
 
-router.post('/login', passport.authenticate('local', { session: false }), adminController.login)
+router.get('/users', adminController.getUsers)
 
 module.exports = router
