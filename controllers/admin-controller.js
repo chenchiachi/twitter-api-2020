@@ -1,5 +1,5 @@
 const sequelize = require('sequelize')
-const { User } = require('../models')
+const { User, Tweet, Like } = require('../models')
 const adminController = {
   getUsers: async (req, res, next) => {
     try {
@@ -15,6 +15,17 @@ const adminController = {
         order: [[sequelize.col('tweetsCount'), 'DESC'], ['createdAt']]
       })
       res.json(userData)
+    } catch (err) {
+      next(err)
+    }
+  },
+  deleteTweet: async (req, res, next) => {
+    try {
+      const tweet = await Tweet.findByPk(req.params.id)
+      if (!tweet) throw Error("Tweet didn't exist!")
+      await tweet.destroy()
+      await Like.destroy({ where: { TweetId: req.params.id }})
+      return res.json({ status: "success", message: "Tweet was deleted." })
     } catch (err) {
       next(err)
     }
