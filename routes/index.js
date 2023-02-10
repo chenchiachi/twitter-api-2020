@@ -5,11 +5,12 @@ const passport = require('../config/passport')
 const admin = require('./modules/admin')
 
 const userController = require('../controllers/user-controller')
-const { generalErrorHandler } =require('../middleware/errHandler')
+const { authenticated, authenticatedAdmin } = require('../middleware/api-auth')
+const { generalErrorHandler } = require('../middleware/errHandler')
+
+router.use('/admin', authenticated, authenticatedAdmin, admin)
 
 router.post('/login', passport.authenticate('local', { session: false }), userController.login)
-
-router.use('/admin', admin)
 
 router.use('/', generalErrorHandler)
 module.exports = router
