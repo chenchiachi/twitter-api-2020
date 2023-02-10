@@ -20,10 +20,9 @@ passport.use(new LocalStrategy(
   (req, account, password, cb) => {
     User.findOne({ where: { account } })
       .then(user => {
-        if (!user) return cb(null, { data: { status: 'error', message: "Account didn't exit!" } })
+        if (!user) return cb("Account didn't exit!", false)
         bcrypt.compare(password, user.password).then(res => {
-          if (!res) return cb(null, { data: { status: 'error', message: 'Password incorrect!' } })
-
+          if (!res) return cb('Password incorrect!', false)
           return cb(null, user)
         })
       })

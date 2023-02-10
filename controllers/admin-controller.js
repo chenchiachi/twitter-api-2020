@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-
 const adminController = {
   login: (req, res, next) => {
     try {
@@ -17,7 +16,7 @@ const adminController = {
           }
         })
       } else {
-        res.json({ status: 'error', message: 'Unauthorized.' })
+        throw Error('Unauthorized.')
       }
     } catch (err) {
       next(err)
