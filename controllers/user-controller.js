@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken')
+const sequelize = require('sequelize')
 const bcrypt = require('bcrypt')
 const { User } = require('../models')
+const { getUser } = require('../_helpers')
 
 const userController = {
   login: (req, res, next) => {
@@ -39,6 +41,29 @@ const userController = {
         password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null)
       })
       return res.json({ status: 'SignUp success.' })
+    } catch (err) {
+      next(err)
+    }
+  },
+  getCurrentUser: async (req, res, next) => {
+    try {
+      const id = getUser(req).dataValues.id
+      console.log("id", id)
+      const userData = await User.findByPk(id, {
+        raw: true,
+        nest: true,
+        attributes: {
+          include: [
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followingId = User.id)'), 'followersCount'],
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followingId = User.id)'), 'followingsCount'],
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Tweets WHERE Tweets.UserId = User.id)'), 'tweetsCount'],
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Replies WHERE Replies.UserId = User.id)'), 'repliesCount'],
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Likes WHERE Likes.UserId = User.id)'), 'likesCount'],
+          ],
+          exclude: ['password', 'createdAt', 'updatedAt']
+        }
+      })
+      return res.json(userData)
     } catch (err) {
       next(err)
     }
