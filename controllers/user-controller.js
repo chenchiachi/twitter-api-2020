@@ -38,7 +38,8 @@ const userController = {
         account,
         name,
         email,
-        password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null)
+        password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
+        role: 'user'
       })
       return res.json({ status: 'SignUp success.' })
     } catch (err) {
@@ -64,6 +65,28 @@ const userController = {
         }
       })
       return res.json(userData)
+    } catch (err) {
+      next(err)
+    }
+  },
+  getTopUser: async (req, res, next) => {
+    const TopUserNum = 10
+    try {
+      const topUser = await User.findAll({
+        raw: true,
+        nest: true,
+        where: { role: 'user' },
+        attributes: {
+          exclude: ['password', 'createdAt', 'updatedAt'],
+          include: [
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followingId = User.id)'), 'followersCount'],
+            [sequelize.literal(`EXISTS(SELECT true FROM Followships WHERE Followships.followerId = ${getUser(req).id} AND Followships.followingId = User.id)`), 'isFollowing'],
+          ],
+        },
+        order: [[sequelize.literal('followersCount'), 'DESC']],
+        limit: TopUserNum
+      })
+      res.json(topUser)
     } catch (err) {
       next(err)
     }
