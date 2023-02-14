@@ -48,8 +48,7 @@ const userController = {
   },
   getCurrentUser: async (req, res, next) => {
     try {
-      const id = getUser(req).dataValues.id
-      console.log("id", id)
+      const id = getUser(req).id
       const userData = await User.findByPk(id, {
         raw: true,
         nest: true,
@@ -86,7 +85,26 @@ const userController = {
         order: [[sequelize.literal('followersCount'), 'DESC']],
         limit: TopUserNum
       })
-      res.json(topUser)
+      return res.json(topUser)
+    } catch (err) {
+      next(err)
+    }
+  },
+  getUser: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      const userData = await User.findByPk(id, {
+        raw: true,
+        nest: true,
+        attributes: {
+          exclude: ['password', 'isAdmin', 'role', 'createdAt', 'updatedAt'],
+          include: [
+            [sequelize.literal(`EXISTS(SELECT true FROM Followships WHERE Followships.FollowerId = ${getUser(req).id} AND Followships.followingId = User.id)`), 'isFollowing']
+          ]
+        }
+      })
+      if (!userData) throw Error('User not found.')
+      return res.json(userData)
     } catch (err) {
       next(err)
     }
