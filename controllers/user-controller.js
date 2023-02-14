@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
 const sequelize = require('sequelize')
 const bcrypt = require('bcrypt')
-const { User } = require('../models')
+const { User, Tweet } = require('../models')
 const { getUser } = require('../_helpers')
 
 const userController = {
@@ -105,6 +105,29 @@ const userController = {
       })
       if (!userData) throw Error('User not found.')
       return res.json(userData)
+    } catch (err) {
+      next(err)
+    }
+  },
+  getUserTweets: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      const user = await User.findByPk(id)
+      const userTweets = await Tweet.findAll({
+        raw: true,
+        nest: true,
+        where: { userId: id },
+        attributes: {
+          include: [
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Replies WHERE Replies.TweetId = Tweet.id )'), 'repliesCount'],
+            [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Likes WHERE Likes.TweetId = Tweet.id )'), 'likesCount'],
+            [sequelize.literal(`EXISTS(SELECT true FROM Likes WHERE Likes.UserId = ${getUser(req).id} AND Likes.TweetId = Tweet.id)`), 'isLiked'],
+          ]
+        },
+        order: [['CreatedAt', 'DESC']]
+      })
+      if (!user) throw Error('User not found.')
+      return res.json(userTweets)
     } catch (err) {
       next(err)
     }
