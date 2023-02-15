@@ -46,9 +46,9 @@ const userController = {
       next(err)
     }
   },
-  getCurrentUser: async (req, res, next) => {
+  getUser: async (req, res, next) => {
     try {
-      const id = getUser(req).id
+      const id = getUser(req).id || getUser(req).dataValues.id
       const userData = await User.findByPk(id, {
         raw: true,
         nest: true,
@@ -59,6 +59,7 @@ const userController = {
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Tweets WHERE Tweets.UserId = User.id)'), 'tweetsCount'],
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Replies WHERE Replies.UserId = User.id)'), 'repliesCount'],
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Likes WHERE Likes.UserId = User.id)'), 'likesCount'],
+            [sequelize.literal(`EXISTS (SELECT true FROM Followships WHERE Followships.followerId = ${getUser(req).dataValues.id} AND Followships.followingId = User.id)`), 'isFollowing'],
           ],
           exclude: ['password', 'createdAt', 'updatedAt']
         }
@@ -79,32 +80,14 @@ const userController = {
           exclude: ['password', 'createdAt', 'updatedAt'],
           include: [
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Followships WHERE Followships.followingId = User.id)'), 'followersCount'],
-            [sequelize.literal(`EXISTS(SELECT true FROM Followships WHERE Followships.followerId = ${getUser(req).id} AND Followships.followingId = User.id)`), 'isFollowing'],
+            [sequelize.literal(`EXISTS (SELECT true FROM Followships WHERE Followships.followerId = ${getUser(req).dataValues.id} AND Followships.followingId = User.id)`), 'isFollowing'],
           ],
         },
         order: [[sequelize.literal('followersCount'), 'DESC']],
         limit: TopUserNum
       })
-      return res.json(topUser)
-    } catch (err) {
-      next(err)
-    }
-  },
-  getUser: async (req, res, next) => {
-    try {
-      const id = req.params.id
-      const userData = await User.findByPk(id, {
-        raw: true,
-        nest: true,
-        attributes: {
-          exclude: ['password', 'isAdmin', 'role', 'createdAt', 'updatedAt'],
-          include: [
-            [sequelize.literal(`EXISTS(SELECT true FROM Followships WHERE Followships.FollowerId = ${getUser(req).id} AND Followships.followingId = User.id)`), 'isFollowing']
-          ]
-        }
-      })
       if (!userData) throw Error('User not found.')
-      return res.json(userData)
+      return res.json(topUser)
     } catch (err) {
       next(err)
     }
@@ -121,7 +104,7 @@ const userController = {
           include: [
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Replies WHERE Replies.TweetId = Tweet.id )'), 'repliesCount'],
             [sequelize.literal('(SELECT COUNT(DISTINCT id) FROM Likes WHERE Likes.TweetId = Tweet.id )'), 'likesCount'],
-            [sequelize.literal(`EXISTS(SELECT true FROM Likes WHERE Likes.UserId = ${getUser(req).id} AND Likes.TweetId = Tweet.id)`), 'isLiked'],
+            [sequelize.literal(`EXISTS (SELECT true FROM Likes WHERE Likes.UserId = ${getUser(req).dataValues.id} AND Likes.TweetId = Tweet.id)`), 'isLiked'],
           ]
         },
         order: [['CreatedAt', 'DESC']]
