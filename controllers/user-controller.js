@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
 const sequelize = require('sequelize')
 const bcrypt = require('bcrypt')
-const { User, Tweet } = require('../models')
+const { User, Tweet, Reply } = require('../models')
 const { getUser } = require('../_helpers')
 
 const userController = {
@@ -114,7 +114,25 @@ const userController = {
     } catch (err) {
       next(err)
     }
+  },
+  getUserReplies: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      const user = await User.findByPk(id)
+      if (!user) throw Error('User not found.')
+      const replies = await Reply.findAll({
+        where: { UserId: id },
+        include: [
+          { model: User, attributes: ['id', 'account', 'name', 'avatar'] },
+        ],
+        order: [['createdAt', 'DESC']]
+      })
+      return res.json(replies)
+    } catch (err) {
+      next(err)
+    }
   }
+
 }
 
 module.exports = userController
