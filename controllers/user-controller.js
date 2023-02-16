@@ -174,6 +174,25 @@ const userController = {
     } catch (err) {
       next(err)
     }
+  },
+  getFollowers: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      const user = await User.findByPk(id)
+      if (!user) throw Error('User not found.')
+      const followers = await Followship.findAll({
+        where: { followingId: id },
+        order: [['createdAt', 'DESC']],
+        attributes: {
+          include: [
+            [sequelize.literal(`EXISTS(SELECT true FROM Followships AS l1 WHERE l1.followerId= ${getUser(req).dataValues.id} AND l1.followingId = Followship.followerId)`), 'isFollowing']
+          ]
+        }
+      })
+      return res.json(followers)
+    } catch (err) {
+      next(err)
+    }
   }
 
 }
