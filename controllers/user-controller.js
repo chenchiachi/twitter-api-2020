@@ -193,8 +193,40 @@ const userController = {
     } catch (err) {
       next(err)
     }
-  }
-
+  },
+  editAccount: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      if (getUser(req).dataValues.id !== Number(id)) throw new Error('unauthorized!')
+      const user = await User.findByPk(id)
+      if (!user) throw Error('User not found.')
+      const { account, email, password, checkPassword } = req.body
+      if (!account || !email || !password || !checkPassword) throw new Error('All fields are require.')
+      if (/\s/.test(account) || /\s/.test(password)) throw new Error('Not allowed space.')
+      if (password !== checkPassword) throw new Error('Passwords do not match!')
+      const userEmail = await User.findOne({
+        where: { email },
+        attributes: ['id'],
+        raw: true
+      })
+      const userAccount = await User.findOne({
+        where: { account },
+        attributes: ['id'],
+        raw: true
+      })
+      if (userEmail) throw new Error('Email already exists!')
+      if (userAccount) throw new Error('Account already exists!')
+      const hash = await bcrypt.hash(password, 10)
+      await user.update({
+        account: account,
+        email: email,
+        password: hash
+      })
+      return res.json({ status: 'success' })
+    } catch (err) {
+      next(err)
+    }
+  },
 }
 
 module.exports = userController
