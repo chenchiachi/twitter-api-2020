@@ -227,6 +227,25 @@ const userController = {
       next(err)
     }
   },
+  editProfile: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      if (getUser(req).dataValues.id !== Number(id)) throw new Error('unauthorized!')
+      const user = await User.findByPk(id)
+      if (!user) throw Error('User not found.')
+      const {name, introduction } = req.body
+      if(!name) return new Error('Name is required.')
+      if (name.length > 50) throw Error('Name must be less than 50 characters!')
+      if (introduction.length > 160) throw Error('Introduction must be less than 160 characters!')
+      await user.update({
+        name: name,
+        introduction: introduction
+      })
+      return res.json({status:'success'})
+    } catch (err) {
+      next(err)
+    }
+  }
 }
 
 module.exports = userController

@@ -1,6 +1,5 @@
 const express = require('express')
 const router = express.Router()
-const passport = require('../../config/passport')
 const userController = require('../../controllers/user-controller')
 
 router.get('/top', userController.getTopUser)
@@ -11,5 +10,6 @@ router.get('/:id/followings', userController.getFollowings)
 router.get('/:id/followers', userController.getFollowers)
 router.get('/:id', userController.getUser)
 router.put('/:id/edit', userController.editAccount)
+router.put('/:id', userController.editProfile)
 
 module.exports = router
