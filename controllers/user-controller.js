@@ -3,6 +3,7 @@ const sequelize = require('sequelize')
 const bcrypt = require('bcrypt')
 const { User, Tweet, Reply, Like, Followship } = require('../models')
 const { getUser } = require('../_helpers')
+const {imgurFileHandler} = require('../helpers/file-helpers')
 
 const userController = {
   login: (req, res, next) => {
@@ -237,11 +238,26 @@ const userController = {
       if(!name) return new Error('Name is required.')
       if (name.length > 50) throw Error('Name must be less than 50 characters!')
       if (introduction.length > 160) throw Error('Introduction must be less than 160 characters!')
-      await user.update({
-        name: name,
-        introduction: introduction
-      })
-      return res.json({status:'success'})
+      const { files } = req
+      if (files) {
+        const avatar = files.avatar ? await imgurFileHandler(files.avatar[0]) : null
+        const cover = files.cover ? await imgurFileHandler(files.cover[0]) : null
+        await user.update({
+          name,
+          introduction,
+          avatar: avatar || user.avatar,
+          cover: cover || user.cover
+        })
+        return res.json({ status: 'success' })
+      } else {
+        await user.update({
+          name,
+          introduction,
+          avatar: user.avatar,
+          cover: user.cover
+        })
+        return res.json({ status: 'success' })
+      }
     } catch (err) {
       next(err)
     }
