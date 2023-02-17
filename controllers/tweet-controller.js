@@ -108,6 +108,22 @@ const tweetController = {
     } catch (err) {
       next(err)
     }
+  },
+  removeLike: async (req, res, next) => {
+    try {
+      const TweetId = req.params.id
+      const tweet = await Tweet.findByPk(TweetId)
+      if (!tweet) throw new Error('Not tweet found.')
+      const UserId = getUser(req).dataValues.id
+      const isLiked = await Like.findOne({
+        where: { UserId, TweetId }
+      })
+      if (!isLiked) throw new Error('Like not found.')
+      await isLiked.destroy()
+      return res.json('Success')
+    } catch (err) {
+      next(err)
+    }
   }
 }
 
