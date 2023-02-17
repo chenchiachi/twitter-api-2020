@@ -44,7 +44,7 @@ const tweetController = {
   getTweet: async (req, res, next) => {
     try {
       const tweetId = req.params.id
-      const userTweet = await Tweet.findByPk(tweetId, {
+      const tweet = await Tweet.findByPk(tweetId, {
         include: [
           { model: User, attributes: ['id', 'account', 'name', 'avatar', 'cover'] },
           { model: Reply },
@@ -57,7 +57,38 @@ const tweetController = {
           ]
         }
       })
-      return res.json(userTweet)
+      if (!tweet) throw new Error('Not tweet found')
+      return res.json(tweet)
+    } catch (err) {
+      next(err)
+    }
+  },
+  getReplies: async (req, res, next) => {
+    try {
+      const id = req.params.id
+      const tweetReplies = await Reply.findAll({
+        where: { TweetId: id }
+      })
+      return res.json(tweetReplies)
+    } catch (err) {
+      next(err)
+    }
+  },
+  postReply: async (req, res, next) => {
+    try {
+      const { comment } = req.body
+      const tweetId = req.params.id
+      const userId = getUser(req).dataValues.id
+      if (!comment) throw new Error('Comment is required!')
+      if (comment.length > 140) throw new Error('Comment must be less than 140 characters!')
+      const tweet = await Tweet.findByPk(tweetId)
+      if (!tweet) throw new Error('Not tweet found.')
+      await Reply.create({
+        comment,
+        TweetId: tweetId,
+        UserId: userId
+      })
+      return res.json('Success')
     } catch (err) {
       next(err)
     }
