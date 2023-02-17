@@ -4,6 +4,7 @@ const passport = require('../config/passport')
 
 const admin = require('./modules/admin')
 const user = require('./modules/user')
+const tweet = require('./modules/tweet')
 const userController = require('../controllers/user-controller')
 const { authenticated, authenticatedAdmin } = require('../middleware/api-auth')
 const { generalErrorHandler } = require('../middleware/errHandler')
@@ -11,8 +12,9 @@ const { generalErrorHandler } = require('../middleware/errHandler')
 router.post('/login', passport.authenticate('local', { session: false }), userController.login)
 router.post('/users', userController.signUp)
 
-router.use('/users', authenticated, user)
 router.use('/admin', authenticated, authenticatedAdmin, admin)
+router.use('/users', authenticated, user)
+router.use('/tweets', authenticated, tweet)
 
 
 router.use('/', generalErrorHandler)
