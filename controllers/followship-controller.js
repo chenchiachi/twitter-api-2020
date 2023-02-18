@@ -20,6 +20,22 @@ const followshipController = {
     } catch (err) {
       next(err)
     }
+  },
+  removeFollowship: async (req, res, next) => {
+    try {
+      const followingId = req.params.id
+      const followerId = getUser(req).dataValues.id
+      const user = await User.findByPk(followingId)
+      if (!user) throw new Error('User not found.')
+      const followship = await Followship.findOne({
+        where: { followingId, followerId }
+      })
+      if (!followship) throw new Error('Followship not found.')
+      await followship.destroy()
+      return res.json('Success')
+    } catch (err) {
+      next(err)
+    }
   }
 }
 
