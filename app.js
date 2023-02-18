@@ -5,10 +5,12 @@ if (process.env.NODE_ENV !== 'production') {
 const express = require('express')
 const routes = require('./routes')
 const passport =require('./config/passport')
+const cors = require('cors')
 
 const app = express()
 const port = process.env.PORT || 3000
 
+app.use(cors())
 app.use(express.urlencoded({ extended: true })) //setting body-parser
 app.use(express.json()) //解析JSON格式資料
 app.use(passport.initialize()) //初始化 Passport
